@@ -348,8 +348,9 @@ button { cursor: pointer; text-align: center; }
   background: var(--bg-card); border-left: 1px solid var(--line);
   transition: width 0.18s ease, flex-basis 0.18s ease;
 }
-/* 移动端底部抽屉的遮罩：桌面端不显示 */
+/* 移动端底部抽屉的遮罩与拖拽把手：桌面端不显示 */
 .drawer-scrim { display: none; }
+.drawer-grip { display: none; }
 /* 回收态：面板让位给正文，只留一条 40px 的竖条 */
 .layout.rail-collapsed .side-panel { width: 0; flex-basis: 0; border-left: 0; overflow: hidden; }
 .side-rail { display: none; }
@@ -1006,20 +1007,25 @@ section.ctx-section.ctx-summary {
   .side-panel {
     position: fixed; left: 0; right: 0; bottom: 0;
     width: 100%; flex: 0 0 auto;
-    height: 72vh; max-height: 72vh;
-    height: 72dvh; max-height: 72dvh;
+    /* 占屏严格小于一半，剩余空间留给周报正文 */
+    height: 46vh; max-height: 46vh;
+    height: 46dvh; max-height: 46dvh;
     z-index: 60; border-left: 0; border-top: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.22);
     transition: transform 0.22s ease;
     padding-bottom: env(safe-area-inset-bottom);
   }
-  .side-panel::before {
-    content: ''; position: absolute; top: 6px; left: 50%;
-    width: 36px; height: 4px; margin-left: -18px; border-radius: 999px;
-    background: var(--line-strong);
+  /* 真实的拖拽把手：向下拖超过 60px 就收起抽屉 */
+  .drawer-grip {
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 auto; height: 20px; margin-top: 4px;
+    touch-action: none; cursor: grab;
   }
-  .side-panel .panel-head { padding-top: 18px; }
+  .drawer-grip span {
+    width: 36px; height: 4px; border-radius: 999px; background: var(--line-strong);
+  }
+  .side-panel .panel-head { padding-top: 4px; }
   .layout.rail-collapsed .side-panel {
     width: 100%; flex-basis: auto; border-left: 0; overflow: hidden;
     transform: translateY(105%); pointer-events: none;

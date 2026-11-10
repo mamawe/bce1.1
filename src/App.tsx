@@ -1,4 +1,5 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import { UnauthorizedError, api, getApiToken, setApiUser } from './api'
 import type {
   DocContext, DocumentDetail, DocumentRow, EntityRow, Focus, PanelKey, User,
@@ -112,6 +113,9 @@ export default function App() {
     return localStorage.getItem('bce_v11_rail') === 'off'
   })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  // 移动端底部抽屉：按住顶部横条下拉，超过阈值就收起
+  const [drawerOffset, setDrawerOffset] = useState(0)
+  const drawerStartY = useRef<number | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
   // 首屏直接画骨架，避免「还没有可读的周报」先闪一下
   const [docLoading, setDocLoading] = useState(true)
@@ -182,6 +186,25 @@ export default function App() {
     // 移动端默认收起底部抽屉，点正文高亮词时必须把它拉起来，否则看起来像没反应
     setRailCollapsed(false)
   }, [])
+
+  const handleGripPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!window.matchMedia('(max-width: 900px)').matches) return
+    drawerStartY.current = e.clientY
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const handleGripPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (drawerStartY.current == null) return
+    setDrawerOffset(Math.max(0, e.clientY - drawerStartY.current))
+  }
+
+  const handleGripPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (drawerStartY.current == null) return
+    const dy = e.clientY - drawerStartY.current
+    drawerStartY.current = null
+    setDrawerOffset(0)
+    if (dy > 60) setRailCollapsed(true)
+  }
 
   const handleIngested = useCallback((msg: string) => {
     setImportOpen(false)
@@ -383,7 +406,22 @@ export default function App() {
           <div className="drawer-scrim" role="presentation" onClick={() => setRailCollapsed(true)} />
         )}
 
-        <aside className="side-panel">
+        <aside
+          className="side-panel"
+          style={drawerOffset > 0 ? { transform: `translateY(${drawerOffset}px)`, transition: 'none' } : undefined}
+        >
+          <div
+            className="drawer-grip"
+            role="button"
+            tabIndex={-1}
+            aria-label="下拉收起面板"
+            onPointerDown={handleGripPointerDown}
+            onPointerMove={handleGripPointerMove}
+            onPointerUp={handleGripPointerUp}
+            onPointerCancel={handleGripPointerUp}
+          >
+            <span aria-hidden />
+          </div>
           <div className="panel-head">
             <h2>{PANEL_TITLES[panel]}</h2>
             <div className="panel-head-right">
