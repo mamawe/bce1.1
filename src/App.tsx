@@ -241,7 +241,7 @@ export default function App() {
     <div className="app-shell">
       <header className={`topbar${mobileMenuOpen ? ' menu-open' : ''}`}>
         <div className="topbar-left">
-          <span className="logo-mark">在</span>
+          <span className="logo-mark">z</span>
           <button type="button" className="brand-btn" onClick={() => setAboutOpen(true)} title="关于周报数据助手">
             <span className="brand-text">
               <span className="brand-name">周报数据助手</span>
