@@ -1,5 +1,5 @@
 /* ============================================================
-   BCE 1.1 — 主题化样式
+   周报数据助手 — 主题化样式
    三套主题：浅色（默认，沿用 1.0 蓝白）/ 护眼（米黄低对比）/ 深色
    所有颜色走 token，结构只写一次
    ============================================================ */
@@ -176,8 +176,8 @@ button { cursor: pointer; text-align: center; }
 .logo-mark {
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border-radius: 8px;
-  background: var(--primary); color: var(--primary-ink);
-  font-weight: 700; font-size: 16px;
+  background: #dc2626; color: #fff;
+  font-weight: 700; font-size: 17px; line-height: 1;
 }
 .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
 .brand-name { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
@@ -889,14 +889,14 @@ section.ctx-section.ctx-summary {
 .modal-error { border: 1px solid var(--bad); background: var(--bad-soft); color: var(--bad); padding: 9px 12px; border-radius: var(--radius); font-size: 12.5px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--line); }
 
-/* 关于 BCE */
+/* 关于周报数据助手 */
 .about { position: fixed; inset: 0; z-index: 60; overflow-y: auto; background: var(--bg); }
 .about-bar {
   position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 12px 24px; background: var(--bg-card); border-bottom: 1px solid var(--line); z-index: 2;
 }
 .about-bar-left { display: flex; align-items: baseline; gap: 10px; }
-.about-bar-mark { font-family: var(--mono); font-weight: 700; letter-spacing: 0.1em; color: var(--primary); }
+.about-bar-mark { font-family: var(--sans); font-weight: 700; letter-spacing: 0.06em; color: #dc2626; }
 .about-scroll { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
 .about-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; color: var(--ink-faint); text-transform: uppercase; }
 .about-title { font-size: 30px; line-height: 1.35; letter-spacing: -0.02em; margin: 10px 0 16px; font-weight: 700; }
@@ -1007,9 +1007,9 @@ section.ctx-section.ctx-summary {
   .side-panel {
     position: fixed; left: 0; right: 0; bottom: 0;
     width: 100%; flex: 0 0 auto;
-    /* 占屏严格小于一半，剩余空间留给周报正文 */
-    height: 46vh; max-height: 46vh;
-    height: 46dvh; max-height: 46dvh;
+    /* 抽屉占屏 55%，剩余空间留给周报正文 */
+    height: 55vh; max-height: 55vh;
+    height: 55dvh; max-height: 55dvh;
     z-index: 60; border-left: 0; border-top: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.22);

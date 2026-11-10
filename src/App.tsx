@@ -241,11 +241,11 @@ export default function App() {
     <div className="app-shell">
       <header className={`topbar${mobileMenuOpen ? ' menu-open' : ''}`}>
         <div className="topbar-left">
-          <span className="logo-mark">B</span>
-          <button type="button" className="brand-btn" onClick={() => setAboutOpen(true)} title="关于 BCE">
+          <span className="logo-mark">在</span>
+          <button type="button" className="brand-btn" onClick={() => setAboutOpen(true)} title="关于周报数据助手">
             <span className="brand-text">
-              <span className="brand-name">BCE</span>
-              <span className="brand-sub">Business Context Engine</span>
+              <span className="brand-name">周报数据助手</span>
+              <span className="brand-sub">Weekly Report Assistant</span>
             </span>
           </button>
         </div>

@@ -6,16 +6,16 @@ interface Props {
 
 const LETTERS = [
   {
-    letter: 'B', word: 'Business',
-    desc: '只管经营信息：指标、事件、归因、决策。排版和寒暄不进系统。',
+    letter: '周', word: '周报',
+    desc: '只收周报正文里的经营信息：指标、事件、归因、决策。排版和寒暄不进系统。',
   },
   {
-    letter: 'C', word: 'Context',
-    desc: '信息必须带坐标：哪个品类、哪一周、谁做的决定、原文在哪。',
+    letter: '数', word: '数据',
+    desc: '数字必须带坐标：哪个品类、哪一周、谁做的决定、原文在哪。',
   },
   {
-    letter: 'E', word: 'Engine',
-    desc: '可复算的管线：入库有固定步骤，问答有固定路径，事实与推断分开。',
+    letter: '助', word: '助手',
+    desc: '可复算的回答：入库有固定步骤，问答有固定路径，事实与推断分开。',
   },
 ]
 
@@ -57,21 +57,21 @@ export default function AboutBCE({ onClose }: Props) {
   }, [onClose])
 
   return (
-    <div className="about" role="dialog" aria-modal="true" aria-label="关于 BCE">
+    <div className="about" role="dialog" aria-modal="true" aria-label="关于周报数据助手">
       <header className="about-bar">
         <div className="about-bar-left">
-          <span className="about-bar-mark">BCE</span>
+          <span className="about-bar-mark">周报数据助手</span>
           <span className="muted">产品说明</span>
         </div>
         <button type="button" className="btn" onClick={onClose}>返回工作台</button>
       </header>
 
       <div className="about-scroll">
-        <p className="about-kicker">Business Context Engine</p>
+        <p className="about-kicker">Weekly Report Assistant</p>
         <h1 className="about-title">
           一份周报读完就完了。
           <br />
-          BCE 让它可以被追问。
+          周报数据助手让它可以被追问。
         </h1>
         <p className="about-lede">
           读周报时，它把指标、事件、归因、决策拆开，各自挂到品类、时间、责任人和来源段落上。

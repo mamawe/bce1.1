@@ -5,7 +5,7 @@ import type {
 } from './types'
 import { SAMPLE_REPORTS } from './sample-reports'
 
-/* BCE 离线演示数据层。
+/* 周报数据助手离线演示数据层。
  * 数据来自 samples/ 下 2026-W20～W35 的周报样本；指标为“周均日”口径。
  * 演示态下所有写操作在内存中生效，不持久化、不访问网络。 */
 

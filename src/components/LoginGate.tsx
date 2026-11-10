@@ -61,8 +61,8 @@ export default function LoginGate({ onDone }: { onDone: () => void }) {
   return (
     <div className="login-gate">
       <div className="login-card">
-        <h1>BCE 1.1</h1>
-        <p className="login-sub">Business Context Engine · 请先登录</p>
+        <h1>周报数据助手</h1>
+        <p className="login-sub">Weekly Report Assistant · 请先登录</p>
 
         {error && <div className="login-error" role="alert">{error}</div>}
 
