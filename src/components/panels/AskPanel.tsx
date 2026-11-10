@@ -123,10 +123,10 @@ export default function AskPanel() {
     try { localStorage.setItem(CONTEXT_KEY, useContext ? '1' : '0') } catch { /* 存储被禁用时静默 */ }
   }, [useContext])
 
-  // 新答案落在面板底部，回来时直接停在最新一轮
+  // 新答案落在面板底部，回来时直接停在最新一轮；空对话保持顶部，别一进来就滚过欢迎区
   useEffect(() => {
     const el = bodyRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el && turns.length > 0) el.scrollTop = el.scrollHeight
   }, [turns.length])
 
   const reset = useCallback(() => {

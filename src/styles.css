@@ -1026,6 +1026,8 @@ section.ctx-section.ctx-summary {
     width: 36px; height: 4px; border-radius: 999px; background: var(--line-strong);
   }
   .side-panel .panel-head { padding-top: 4px; }
+  /* 手机端演示：问数面板去掉提问框及其下方内容，把抽屉高度全留给问答 */
+  .ask-panel .ask-composer { display: none; }
   .layout.rail-collapsed .side-panel {
     width: 100%; flex-basis: auto; border-left: 0; overflow: hidden;
     transform: translateY(105%); pointer-events: none;
