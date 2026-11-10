@@ -1426,19 +1426,10 @@ section.ctx-section.ctx-summary {
 }
 .copilot-hint { margin-right: auto; font-size: 11px; color: var(--ink-faint); }
 
-/* Copilot 浮动按钮（收起态） */
-/* 左 50%（水平居中），下 15%（距底 15vh），避开右下发送按钮 */
-.copilot-fab {
-  position: fixed; left: 50%; bottom: 15vh; z-index: 30;
-  transform: translateX(-50%);
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 18px; border: 1px solid var(--primary);
-  border-radius: var(--radius-lg); background: var(--primary); color: var(--primary-ink);
-  font-size: 14px; font-weight: 600; cursor: pointer;
-  box-shadow: var(--shadow-md); transition: transform 0.15s, filter 0.15s;
-}
-.copilot-fab:hover { filter: brightness(1.08); transform: translateX(-50%) translateY(-1px); }
-.copilot-fab span { font-size: 18px; line-height: 1; }
+/* Copilot header tab：样式和普通 top-tab 一致，
+   但打开状态用 is-open 标记（因为它开的是独立侧边栏，不占 panel 槽位） */
+.copilot-tab { margin-left: 10px; border-left: 1px solid var(--line); padding-left: 12px; }
+.copilot-tab.is-open { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
 
 @media (max-width: 1180px) {
   .dash-two-col { grid-template-columns: 1fr; }
@@ -1447,5 +1438,4 @@ section.ctx-section.ctx-summary {
 }
 @media (max-width: 900px) {
   .copilot-sidebar { width: 100%; flex: 0 0 auto; border-left: 0; border-top: 1px solid var(--line); max-height: 50vh; }
-  .copilot-fab { padding: 10px 14px; font-size: 13px; bottom: 12vh; }
 }

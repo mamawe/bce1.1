@@ -80,7 +80,7 @@ const PANEL_ICONS: Record<PanelKey, string> = {
 
 function initialPanel(): PanelKey {
   const q = new URLSearchParams(window.location.search).get('panel') as PanelKey | null
-  return q && PANEL_KEYS.includes(q) ? q : 'context'
+  return q && PANEL_KEYS.includes(q) ? q : 'ask'
 }
 
 export default function App() {
@@ -227,6 +227,18 @@ export default function App() {
               {badges[p.key] ? <em className="tab-badge">{badges[p.key]}</em> : null}
             </button>
           ))}
+          {/* Copilot 按钮：挂在 header tab bar 的最末尾，和面板 tab 视觉一致，
+              它打开的是独立的 Copilot 侧边栏，所以用 is-open 而不是 is-active */}
+          <button
+            type="button"
+            className={`top-tab copilot-tab${copilotOpen ? ' is-open' : ''}`}
+            onClick={() => setCopilotOpen((v) => !v)}
+            title={copilotOpen ? '关闭 Copilot' : '打开 Copilot'}
+            aria-pressed={copilotOpen}
+          >
+            <span aria-hidden>✦</span>
+            Copilot
+          </button>
         </div>
 
         <div className="topbar-right">
@@ -377,19 +389,7 @@ export default function App() {
           </aside>
         )}
 
-        {/* Copilot 浮动按钮（收起态） */}
-        {!copilotOpen && (
-          <button
-            type="button"
-            className="copilot-fab"
-            onClick={() => setCopilotOpen(true)}
-            title="打开 Copilot"
-            aria-label="打开 Copilot"
-          >
-            <span aria-hidden>✦</span>
-            Copilot
-          </button>
-        )}
+        {/* Copilot FAB 已移除，按钮挪到顶部 header 的 tab bar 末尾 */}
       </div>
 
       {toast && (

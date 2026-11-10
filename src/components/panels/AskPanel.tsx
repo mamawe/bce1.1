@@ -18,11 +18,11 @@ const CONTEXT_TURNS = 6
 // 真实系统的这份列表不加这三条——后端目前还答不好这两类复合过滤题。
 const QUICK = [
   '各品类GMV排名和占比',
+  '麻辣烫客单价下降 10% 对 GMV 和毛利率影响多少',
+  '蔬菜和水产在 GMV、客单价、复购率、损耗率上的对比',
   '总体GMV最近5周趋势',
   '为什么蔬菜损耗率下降',
-  '沙县小吃客单价是兰州拉面的多少倍',
   '如果蔬菜GMV上涨10%会是多少',
-  '当前有哪些待审批建议',
   '总体净利率最近8周每周的环比变化',
   '损耗率低于 2.5% 的品类里毛利率最高的三个是谁',
   '哪些品类 GMV 份额超过 8% 且毛利率低于 20%',
@@ -119,6 +119,16 @@ export default function AskPanel() {
     api.health().then((h) => { if (!cancelled) setHealth(h) }).catch(() => { if (!cancelled) setHealth(null) })
     return () => { cancelled = true }
   }, [])
+
+  // 第一次打开 ask 面板（没有历史对话）时自动发一道 GMV 问题，
+  // 让右边栏立刻有实际内容，用户不用盯着空白输入框猜怎么开始。
+  useEffect(() => {
+    if (turns.length === 0 && !busy && !localStorage.getItem('bce_v11_ask_seeded')) {
+      localStorage.setItem('bce_v11_ask_seeded', '1')
+      // send 是 hoisted 的 function 声明，可以直接调
+      void send(QUICK[0])
+    }
+  }, [turns.length, busy])
 
   useEffect(() => { saveTurns(userId, turns) }, [userId, turns])
   useEffect(() => {
