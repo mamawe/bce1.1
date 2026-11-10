@@ -80,7 +80,8 @@ const PANEL_ICONS: Record<PanelKey, string> = {
 
 function initialPanel(): PanelKey {
   const q = new URLSearchParams(window.location.search).get('panel') as PanelKey | null
-  return q && PANEL_KEYS.includes(q) ? q : 'ask'
+  // 首屏默认落在「业务上下文」，配合下面的 GMV 默认选中，打开就是 GMV 趋势
+  return q && PANEL_KEYS.includes(q) ? q : 'context'
 }
 
 export default function App() {
@@ -95,11 +96,17 @@ export default function App() {
   const [detail, setDetail] = useState<DocumentDetail | null>(null)
   const [ctx, setCtx] = useState<DocContext | null>(null)
   const [entities, setEntities] = useState<EntityRow[]>([])
-  const [selected, setSelected] = useState<Focus | null>(null)
+  // 默认选中「总体 GMV」：首屏的业务上下文面板直接有本周数值和历史趋势，不是空白引导页
+  const [selected, setSelected] = useState<Focus | null>({ matched: 'GMV', label: 'GMV', kind: 'metric' })
 
   const [panel, setPanel] = useState<PanelKey>(initialPanel)
   // 回收按钮：收起后正文区变宽，浮起来的窄条能一键展开（并记住上次停在哪一页）
-  const [railCollapsed, setRailCollapsed] = useState<boolean>(() => localStorage.getItem('bce_v11_rail') === 'off')
+  const [railCollapsed, setRailCollapsed] = useState<boolean>(() => {
+    if (localStorage.getItem('bce_v11_rail') === 'off') return true
+    // 移动端默认收起底部抽屉，先让周报正文占满屏幕；点顶部 tab 再展开
+    return window.matchMedia('(max-width: 900px)').matches
+  })
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [docLoading, setDocLoading] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
@@ -199,7 +206,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="topbar">
+      <header className={`topbar${mobileMenuOpen ? ' menu-open' : ''}`}>
         <div className="topbar-left">
           <span className="logo-mark">B</span>
           <button type="button" className="brand-btn" onClick={() => setAboutOpen(true)} title="关于 BCE">
@@ -210,70 +217,93 @@ export default function App() {
           </button>
         </div>
 
-        <div className="topbar-center">
-          {!online && <span className="badge badge-red">后端离线</span>}
-          {PANELS.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              className={`top-tab ${panel === p.key ? 'active' : ''}`}
-              // 顶部 tab 只负责「把对应面板展开到侧边栏」：主屏永远是周报，
-              // 所以侧边栏收起时点 tab 必须一并展开，否则点了什么都不会发生
-              onClick={() => { setPanel(p.key); setRailCollapsed(false) }}
-              title={p.label}
-            >
-              <span aria-hidden>{p.icon}</span>
-              {p.label}
-              {badges[p.key] ? <em className="tab-badge">{badges[p.key]}</em> : null}
-            </button>
-          ))}
-          {/* Copilot 按钮：挂在 header tab bar 的最末尾，和面板 tab 视觉一致，
-              它打开的是独立的 Copilot 侧边栏，所以用 is-open 而不是 is-active */}
-          <button
-            type="button"
-            className={`top-tab copilot-tab${copilotOpen ? ' is-open' : ''}`}
-            onClick={() => setCopilotOpen((v) => !v)}
-            title={copilotOpen ? '关闭 Copilot' : '打开 Copilot'}
-            aria-pressed={copilotOpen}
-          >
-            <span aria-hidden>✦</span>
-            Copilot
-          </button>
-        </div>
+        {/* 移动端汉堡：header 只保留一行，面板入口和身份/主题/报告都收进菜单 */}
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          onClick={() => setMobileMenuOpen((v) => !v)}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="topbar-menu"
+          aria-label={mobileMenuOpen ? '关闭菜单' : '打开菜单'}
+          title={mobileMenuOpen ? '关闭菜单' : '打开菜单'}
+        >
+          <span aria-hidden>{mobileMenuOpen ? '×' : '☰'}</span>
+        </button>
 
-        <div className="topbar-right">
-          <div className="theme-switch" role="group" aria-label="显示主题">
-            {THEMES.map((t) => (
+        {mobileMenuOpen && (
+          <div className="mobile-menu-scrim" role="presentation" onClick={() => setMobileMenuOpen(false)} />
+        )}
+
+        <div className="topbar-menu" id="topbar-menu">
+          <div className="topbar-center">
+            {!online && <span className="badge badge-red">后端离线</span>}
+            {PANELS.map((p) => (
               <button
-                key={t.key}
+                key={p.key}
                 type="button"
-                className={theme === t.key ? 'active' : ''}
-                onClick={() => setTheme(t.key)}
-              >{t.label}</button>
+                className={`top-tab ${panel === p.key ? 'active' : ''}`}
+                // 顶部 tab 只负责「把对应面板展开到侧边栏」：主屏永远是周报，
+                // 所以侧边栏收起时点 tab 必须一并展开，否则点了什么都不会发生
+                onClick={() => { setPanel(p.key); setRailCollapsed(false); setMobileMenuOpen(false) }}
+                title={p.label}
+              >
+                <span aria-hidden>{p.icon}</span>
+                {p.label}
+                {badges[p.key] ? <em className="tab-badge">{badges[p.key]}</em> : null}
+              </button>
             ))}
+            {/* Copilot 按钮：挂在 header tab bar 的最末尾，和面板 tab 视觉一致，
+                它打开的是独立的 Copilot 侧边栏，所以用 is-open 而不是 is-active */}
+            <button
+              type="button"
+              className={`top-tab copilot-tab${copilotOpen ? ' is-open' : ''}`}
+              onClick={() => { setCopilotOpen((v) => !v); setMobileMenuOpen(false) }}
+              title={copilotOpen ? '关闭 Copilot' : '打开 Copilot'}
+              aria-pressed={copilotOpen}
+            >
+              <span aria-hidden>✦</span>
+              Copilot
+            </button>
           </div>
-          <select
-            className="user-select"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            title="切换身份（演示权限隔离）"
-          >
-            {USERS.map((u) => <option key={u.id} value={u.id}>{u.label} · {u.role}</option>)}
-          </select>
-          <button type="button" className="import-btn" onClick={() => setImportOpen(true)}>＋ 导入周报</button>
-          <label className="doc-select-label" htmlFor="doc-select">报告</label>
-          <select
-            id="doc-select"
-            className="doc-select"
-            value={docId}
-            onChange={(e) => setDocId(e.target.value)}
-            disabled={docs.length === 0}
-          >
-            {docs.length === 0 && <option value="">暂无可见周报</option>}
-            {docs.map((d) => (
-              <option key={d.doc_id} value={d.doc_id} title={d.title}>{d.week_label ?? d.doc_id}</option>
-            ))}
-          </select>
+
+          <div className="topbar-right">
+            <div className="theme-switch" role="group" aria-label="显示主题">
+              {THEMES.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  className={theme === t.key ? 'active' : ''}
+                  onClick={() => setTheme(t.key)}
+                >{t.label}</button>
+              ))}
+            </div>
+            <select
+              className="user-select"
+              value={userId}
+              onChange={(e) => { setUserId(e.target.value); setMobileMenuOpen(false) }}
+              title="切换身份（演示权限隔离）"
+            >
+              {USERS.map((u) => <option key={u.id} value={u.id}>{u.label} · {u.role}</option>)}
+            </select>
+            <button
+              type="button"
+              className="import-btn"
+              onClick={() => { setImportOpen(true); setMobileMenuOpen(false) }}
+            >＋ 导入周报</button>
+            <label className="doc-select-label" htmlFor="doc-select">报告</label>
+            <select
+              id="doc-select"
+              className="doc-select"
+              value={docId}
+              onChange={(e) => { setDocId(e.target.value); setMobileMenuOpen(false) }}
+              disabled={docs.length === 0}
+            >
+              {docs.length === 0 && <option value="">暂无可见周报</option>}
+              {docs.map((d) => (
+                <option key={d.doc_id} value={d.doc_id} title={d.title}>{d.week_label ?? d.doc_id}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </header>
 
@@ -326,6 +356,11 @@ export default function App() {
             </button>
           ))}
         </aside>
+
+        {/* 移动端底部抽屉的遮罩：点空白处收起侧栏，header 保持可点 */}
+        {!railCollapsed && (
+          <div className="drawer-scrim" role="presentation" onClick={() => setRailCollapsed(true)} />
+        )}
 
         <aside className="side-panel">
           <div className="panel-head">

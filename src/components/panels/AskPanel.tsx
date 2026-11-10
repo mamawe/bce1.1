@@ -13,9 +13,7 @@ import { Empty, ErrorBox } from '../../ui'
 const CONTEXT_KEY = 'bce_v11_ask_context'
 const CONTEXT_TURNS = 6
 
-// 演示站专属：最后三条对应「模拟 LLM 写 SQL」的样本（path=mock_llm），
-// 点开能看到窗口函数 / JOIN+LIMIT / 份额子查询三种查询形态。
-// 真实系统的这份列表不加这三条——后端目前还答不好这两类复合过滤题。
+// 快捷问题：覆盖取数、排名、趋势、归因、对比、情景推演等典型问法
 const QUICK = [
   '各品类GMV排名和占比',
   '麻辣烫客单价下降 10% 对 GMV 和毛利率影响多少',
@@ -119,16 +117,6 @@ export default function AskPanel() {
     api.health().then((h) => { if (!cancelled) setHealth(h) }).catch(() => { if (!cancelled) setHealth(null) })
     return () => { cancelled = true }
   }, [])
-
-  // 第一次打开 ask 面板（没有历史对话）时自动发一道 GMV 问题，
-  // 让右边栏立刻有实际内容，用户不用盯着空白输入框猜怎么开始。
-  useEffect(() => {
-    if (turns.length === 0 && !busy && !localStorage.getItem('bce_v11_ask_seeded')) {
-      localStorage.setItem('bce_v11_ask_seeded', '1')
-      // send 是 hoisted 的 function 声明，可以直接调
-      void send(QUICK[0])
-    }
-  }, [turns.length, busy])
 
   useEffect(() => { saveTurns(userId, turns) }, [userId, turns])
   useEffect(() => {
