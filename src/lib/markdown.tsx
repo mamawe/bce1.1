@@ -11,13 +11,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-// 允许名称中间出现空格："SKU 宽度" 也能匹配 "SKU宽度"
+// 允许名称中间出现空格："SKU 宽度" 也能匹配 "SKU宽度"。
+// 只在中英文/数字交界处放宽，不能每个字之间都塞 \s*——实体有几百个，
+// 那样拼出来的正则会让周报首屏渲染多花几百毫秒。
+const ASCII_WORD = /[A-Za-z0-9_]/
 function flexiblePattern(s: string): string {
-  return s
-    .replace(/\s+/g, '')
-    .split('')
-    .map(escapeRegExp)
-    .join('\\s*')
+  const chars = Array.from(s)
+  let out = ''
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i]
+    if (/\s/.test(ch)) { out += '\\s*'; continue }
+    out += escapeRegExp(ch)
+    const next = chars[i + 1]
+    if (next && !/\s/.test(next) && ASCII_WORD.test(ch) !== ASCII_WORD.test(next)) out += '\\s*'
+  }
+  return out
 }
 
 export function buildTermIndex(entities: EntityRow[]): TermIndex | null {

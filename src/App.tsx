@@ -1,20 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import { UnauthorizedError, api, getApiToken, setApiUser } from './api'
 import type {
   DocContext, DocumentDetail, DocumentRow, EntityRow, Focus, PanelKey, User,
 } from './types'
 import ReportView from './components/ReportView'
-import ImportDialog from './components/ImportDialog'
-import AboutBCE from './components/AboutBCE'
-import AskPanel from './components/panels/AskPanel'
-import ContextPanel from './components/panels/ContextPanel'
-import EvidencePanel from './components/panels/EvidencePanel'
-import ReviewPanel from './components/panels/ReviewPanel'
-import ActionPanel from './components/panels/ActionPanel'
-import AssetsPanel from './components/panels/AssetsPanel'
-import DashboardPanel from './components/panels/DashboardPanel'
-import CopilotPanel from './components/panels/CopilotPanel'
 import LoginGate from './components/LoginGate'
+
+// 首屏只保留周报正文。上下文/看板把 recharts 拖进了首屏包（gzip 约 124KB，
+// 占整个 JS 的一半），其余面板和弹窗也用不到——全部改成打开时再下载。
+const ContextPanel = lazy(() => import('./components/panels/ContextPanel'))
+const DashboardPanel = lazy(() => import('./components/panels/DashboardPanel'))
+const AskPanel = lazy(() => import('./components/panels/AskPanel'))
+const EvidencePanel = lazy(() => import('./components/panels/EvidencePanel'))
+const ReviewPanel = lazy(() => import('./components/panels/ReviewPanel'))
+const ActionPanel = lazy(() => import('./components/panels/ActionPanel'))
+const AssetsPanel = lazy(() => import('./components/panels/AssetsPanel'))
+const CopilotPanel = lazy(() => import('./components/panels/CopilotPanel'))
+const ImportDialog = lazy(() => import('./components/ImportDialog'))
+const AboutBCE = lazy(() => import('./components/AboutBCE'))
 
 const USERS = [
   { id: 'admin', label: '王总管', role: '全局' },
@@ -92,6 +95,7 @@ export default function App() {
   const [online, setOnline] = useState(true)
 
   const [docs, setDocs] = useState<DocumentRow[]>([])
+  const [docsLoaded, setDocsLoaded] = useState(false)
   const [docId, setDocId] = useState('')
   const [detail, setDetail] = useState<DocumentDetail | null>(null)
   const [ctx, setCtx] = useState<DocContext | null>(null)
@@ -102,13 +106,15 @@ export default function App() {
   const [panel, setPanel] = useState<PanelKey>(initialPanel)
   // 回收按钮：收起后正文区变宽，浮起来的窄条能一键展开（并记住上次停在哪一页）
   const [railCollapsed, setRailCollapsed] = useState<boolean>(() => {
-    if (localStorage.getItem('bce_v11_rail') === 'off') return true
-    // 移动端默认收起底部抽屉，先让周报正文占满屏幕；点顶部 tab 再展开
-    return window.matchMedia('(max-width: 900px)').matches
+    // 移动端每次都从周报正文开始：不读取也不写入上次的抽屉状态，
+    // 否则点过高亮词之后再打开会默认弹出半屏抽屉
+    if (window.matchMedia('(max-width: 900px)').matches) return true
+    return localStorage.getItem('bce_v11_rail') === 'off'
   })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-  const [docLoading, setDocLoading] = useState(false)
+  // 首屏直接画骨架，避免「还没有可读的周报」先闪一下
+  const [docLoading, setDocLoading] = useState(true)
   const [importOpen, setImportOpen] = useState(false)
   const [toast, setToast] = useState<{ tone: 'ok' | 'err' | 'info'; msg: string } | null>(null)
   const [reloadTick, setReloadTick] = useState(0)
@@ -131,6 +137,7 @@ export default function App() {
   }, [theme])
 
   useEffect(() => {
+    if (window.matchMedia('(max-width: 900px)').matches) return
     localStorage.setItem('bce_v11_rail', railCollapsed ? 'off' : 'on')
   }, [railCollapsed])
 
@@ -147,14 +154,15 @@ export default function App() {
       .then((r) => {
         setOnline(true)
         setDocs(r.rows)
+        setDocsLoaded(true)
         setDocId((cur) => (r.rows.some((d) => d.doc_id === cur) ? cur : (r.rows[0]?.doc_id ?? '')))
       })
-      .catch(() => { setOnline(false); setDocs([]); setDocId('') })
+      .catch(() => { setOnline(false); setDocs([]); setDocsLoaded(true); setDocId('') })
   }, [userId, reloadTick, authed])
 
   // 选中周报 → 正文 + 该周上下文
   useEffect(() => {
-    if (!docId) { setDetail(null); setCtx(null); return }
+    if (!docId) { setDetail(null); setCtx(null); setDocLoading(false); return }
     let cancelled = false
     setDocLoading(true)
     Promise.all([api.document(docId), api.docContext(docId)])
@@ -171,6 +179,8 @@ export default function App() {
   const handleFocusClick = useCallback((focus: Focus) => {
     setSelected(focus)
     setPanel('context')
+    // 移动端默认收起底部抽屉，点正文高亮词时必须把它拉起来，否则看起来像没反应
+    setRailCollapsed(false)
   }, [])
 
   const handleIngested = useCallback((msg: string) => {
@@ -309,8 +319,19 @@ export default function App() {
 
       <div className={`layout${railCollapsed ? ' rail-collapsed' : ''}${copilotOpen ? ' copilot-open' : ''}`}>
         <main className="doc-pane">
-          {docLoading && <div className="doc-loading">载入中…</div>}
-          {!docLoading && !detail && (
+          {(!docsLoaded || docLoading) && (
+            <div className="doc-sheet doc-skeleton" aria-busy="true" aria-label="周报载入中">
+              <div className="sk-line sk-chip" />
+              <div className="sk-line sk-title" />
+              <div className="sk-line" />
+              <div className="sk-line sk-w90" />
+              <div className="sk-line sk-w70" />
+              <div className="sk-line sk-w80" />
+              <div className="sk-line sk-w95" />
+              <div className="sk-line sk-w60" />
+            </div>
+          )}
+          {docsLoaded && !docLoading && !detail && (
             <div className="doc-empty">
               <p>还没有可读的周报</p>
               <p className="doc-empty-sub">点击右上角「导入周报」，粘贴 Markdown 周报即可解析成数值、事件与建议。</p>
@@ -380,25 +401,30 @@ export default function App() {
               </button>
             </div>
           </div>
-          <div className="panel-host" key={`${panel}-${userId}-${docId}`}>
-            {panel === 'dashboard' && (
-              <DashboardPanel onSelectMetric={handleSelectMetric} onSelectCategory={handleSelectCategory} />
-            )}
-            {panel === 'ask' && <AskPanel />}
-            {panel === 'context' && (
-              <ContextPanel focus={selected} ctx={ctx} weekLabel={detail?.week_label ?? null} />
-            )}
-            {panel === 'evidence' && (
-              <EvidencePanel ctx={ctx} detail={detail} loading={docLoading} onFocusClick={handleFocusClick} />
-            )}
-            {panel === 'review' && (
-              <ReviewPanel ctx={ctx} onChanged={reload} notify={notify} canApprove={canApprove} />
-            )}
-            {panel === 'action' && (
-              <ActionPanel ctx={ctx} latestWeek={docs[0]?.week_label ?? null} canApprove={canApprove} onChanged={reload} notify={notify} />
-            )}
-            {panel === 'assets' && <AssetsPanel />}
-          </div>
+          {/* 抽屉收起时不挂载面板：移动端首屏就不用渲染图表，省掉一半的主线程开销 */}
+          {!railCollapsed && (
+            <div className="panel-host" key={`${panel}-${userId}-${docId}`}>
+              <Suspense fallback={<div className="panel-loading">载入面板…</div>}>
+                {panel === 'dashboard' && (
+                  <DashboardPanel onSelectMetric={handleSelectMetric} onSelectCategory={handleSelectCategory} />
+                )}
+                {panel === 'ask' && <AskPanel />}
+                {panel === 'context' && (
+                  <ContextPanel focus={selected} ctx={ctx} weekLabel={detail?.week_label ?? null} />
+                )}
+                {panel === 'evidence' && (
+                  <EvidencePanel ctx={ctx} detail={detail} loading={docLoading} onFocusClick={handleFocusClick} />
+                )}
+                {panel === 'review' && (
+                  <ReviewPanel ctx={ctx} onChanged={reload} notify={notify} canApprove={canApprove} />
+                )}
+                {panel === 'action' && (
+                  <ActionPanel ctx={ctx} latestWeek={docs[0]?.week_label ?? null} canApprove={canApprove} onChanged={reload} notify={notify} />
+                )}
+                {panel === 'assets' && <AssetsPanel />}
+              </Suspense>
+            </div>
+          )}
         </aside>
 
         {/* Copilot 侧边栏 */}
@@ -417,10 +443,12 @@ export default function App() {
                 aria-label="关闭 Copilot"
               >×</button>
             </div>
-            <CopilotPanel
-              selectedModule={copilotModule}
-              selectedContext={copilotContext}
-            />
+            <Suspense fallback={<div className="panel-loading">载入 Copilot…</div>}>
+              <CopilotPanel
+                selectedModule={copilotModule}
+                selectedContext={copilotContext}
+              />
+            </Suspense>
           </aside>
         )}
 
@@ -435,15 +463,17 @@ export default function App() {
         </div>
       )}
 
-      {aboutOpen && <AboutBCE onClose={() => setAboutOpen(false)} />}
+      <Suspense fallback={null}>
+        {aboutOpen && <AboutBCE onClose={() => setAboutOpen(false)} />}
 
-      {importOpen && (
-        <ImportDialog
-          onClose={() => setImportOpen(false)}
-          onIngested={handleIngested}
-          onError={(msg) => notify('err', msg)}
-        />
-      )}
+        {importOpen && (
+          <ImportDialog
+            onClose={() => setImportOpen(false)}
+            onIngested={handleIngested}
+            onError={(msg) => notify('err', msg)}
+          />
+        )}
+      </Suspense>
     </div>
   )
 }
