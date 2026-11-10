@@ -11,6 +11,8 @@
   --bg-input: #ffffff;
   --bg-tint: #eff4ff;
   --bg-code: #f8fafc;
+  /* 移动端抽屉：比正文卡片略深一档的冷调面，避免和白色周报糊在一起 */
+  --bg-drawer: #f3f6fa;
 
   --ink: #1f2937;
   --ink-soft: #4b5563;
@@ -66,6 +68,7 @@
   --bg-input: #fffdf7;
   --bg-tint: #f6e8d5;
   --bg-code: #f7f0e1;
+  --bg-drawer: #f6eedf;
 
   --ink: #3a3226;
   --ink-soft: #5d5241;
@@ -99,6 +102,7 @@
   --bg-input: #060b13;
   --bg-tint: rgba(61, 220, 255, 0.08);
   --bg-code: #060b13;
+  --bg-drawer: #0f1a2b;
 
   --ink: #eef5ff;
   --ink-soft: #c3d3e8;
@@ -1012,6 +1016,7 @@ section.ctx-section.ctx-summary {
     height: 55lvh; max-height: 55lvh;
     z-index: 60; border-left: 0; border-top: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
+    background: var(--bg-drawer);
     box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.22);
     transition: transform 0.22s ease;
     padding-bottom: env(safe-area-inset-bottom);
