@@ -1007,9 +1007,9 @@ section.ctx-section.ctx-summary {
   .side-panel {
     position: fixed; left: 0; right: 0; bottom: 0;
     width: 100%; flex: 0 0 auto;
-    /* 抽屉占屏 55%，剩余空间留给周报正文 */
+    /* 抽屉占屏 55%，剩余空间留给周报正文；lvh 按整屏算，避免 iOS 地址栏把高度吃掉 */
     height: 55vh; max-height: 55vh;
-    height: 55dvh; max-height: 55dvh;
+    height: 55lvh; max-height: 55lvh;
     z-index: 60; border-left: 0; border-top: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.22);
