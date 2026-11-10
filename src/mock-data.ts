@@ -1165,6 +1165,65 @@ export const MOCK_QUESTIONS: AskResponse[] = [
     intent: 'METRIC_DISTRIBUTION',
     terms: { categories: [], merchants: [], metrics: ['复购率'] },
   },
+  {
+    // ⑤ 五槽位情景推演：商户类型 × 指标 × 变化方向 × 变化率 × 观察指标
+    question_type: 'scenario', answer: '假设麻辣烫的客单价从当前 876 元下调（-10%）到 788 元，我们在"订单量保持不变"和"订单量弹性系数 = 0.6"两种假设下估算影响：GMV 大约从 320 万降到 288 万（订单量不变）或 307 万（弹性 0.6）；毛利率从 18.5% 同步下滑到 17.8%～17.9%，因为降价直接吞噬毛利。要维持净利率稳定，需要通过供应链端把商品成本率再压 0.8pp。',
+    rows: [
+      { scenario: '订单量不变', gmv_current: 320.0, gmv_scenario: 288.0, gmv_delta_pct: -10.0, gross_margin_current: 18.5, gross_margin_scenario: 17.8, margin_delta_pp: -0.7 },
+      { scenario: '订单弹性 0.6', gmv_current: 320.0, gmv_scenario: 307.2, gmv_delta_pct: -4.0, gross_margin_current: 18.5, gross_margin_scenario: 17.9, margin_delta_pp: -0.6 },
+    ], confidence: 'medium', engine: 'llm', path: 'explain', evidence: ['2026-W35 麻辣烫 GMV 与客单价', '麻辣烫订单弹性历史回归（R²=0.64）', '损益结构商品成本率敏感度测试'],
+    sql: 'WITH base AS (\n  SELECT metric_name, metric_value\n  FROM facts\n  WHERE week_label = \'2026-W35\'\n    AND merchant_type = ?\n    AND metric_name IN (\'GMV\', \'客单价\', \'毛利率\')\n)\nSELECT\n  \'订单量不变\' AS scenario,\n  gmv AS gmv_current,\n  gmv * (1 + ?::numeric / 100) AS gmv_scenario,\n  ROUND(?::numeric, 1) AS gmv_delta_pct,\n  gross_margin AS gross_margin_current,\n  gross_margin * (1 + ?::numeric / 100) AS gross_margin_scenario\nFROM (SELECT\n  MAX(metric_value) FILTER (WHERE metric_name = \'GMV\') AS gmv,\n  MAX(metric_value) FILTER (WHERE metric_name = \'毛利率\') AS gross_margin\nFROM base) b;',
+    follow_ups: ['如果涨价 10% 呢', '烧烤的弹性是多少', '需要降多少成本才能保本'],
+    token_usage: { prompt_tokens: 1540, completion_tokens: 286, calls: 1, models: ['THUDM/GLM-4-9B-0414'] },
+    render_spec: { columns: [
+      { key: 'scenario', role: 'subject', label: '情景假设' },
+      { key: 'gmv_current', role: 'measure', label: 'GMV 当前', unit: '万元', unit_kind: 'money_wan' },
+      { key: 'gmv_scenario', role: 'measure', label: 'GMV 情景', unit: '万元', unit_kind: 'money_wan' },
+      { key: 'gmv_delta_pct', role: 'derived', label: '变化', unit: '%', unit_kind: 'percent' },
+      { key: 'gross_margin_current', role: 'measure', label: '毛利率当前', unit: '%', unit_kind: 'percent' },
+      { key: 'gross_margin_scenario', role: 'measure', label: '毛利率情景', unit: '%', unit_kind: 'percent' },
+      { key: 'margin_delta_pp', role: 'derived', label: '影响', unit: 'pp', unit_kind: 'percent' },
+    ] },
+    understanding: { executor: 'operations', tool: 'scenario', plan: { operation: 'scenario_multi' }, args: { merchant_type: '麻辣烫', metric: '客单价', direction: 'down', change_pct: 10, observe: '毛利率' },
+      slots: [
+        { key: 'merchant', label: '商户类型', kind: 'merchant', values: ['麻辣烫'], options: ['麻辣烫', '沙县小吃', '兰州拉面', '黄焖鸡', '烧烤', '总体'] },
+        { key: 'metric', label: '操作指标', kind: 'metric', values: ['客单价'], options: ['GMV', '毛利率', '净利率', '客单价', '损耗率', '复购率'] },
+        { key: 'direction', label: '变化方向', kind: 'enum', values: ['下调'], options: ['上调', '下调'] },
+        { key: 'change_pct', label: '变化幅度', kind: 'percent', values: ['10'], options: ['5', '10', '15', '20', '25'] },
+        { key: 'observe', label: '观察指标', kind: 'metric', values: ['毛利率'], options: ['GMV', '毛利率', '净利率', '客单价', '损耗率', '复购率'] },
+      ], editable: true },
+    intent: 'WHAT_IF',
+    terms: { categories: [], merchants: ['麻辣烫'], metrics: ['客单价', '毛利率'] },
+  },
+  {
+    // ⑥ 四槽位多维度对比：品类 A × 品类 B × 指标 × 周数
+    question_type: 'compare', answer: '对比 W35 蔬菜和水产在四个指标上的表现：蔬菜 GMV 316 万 / 水产 153 万（差距 163 万）、客单价 869 vs 768（蔬菜高 101）、复购率 69.4% vs 65.8%（蔬菜高 3.6pp）、损耗率 2.2% vs 2.7%（水产高 0.5pp）。蔬菜是规模更大、粘性更高、损耗更好的品类；水产虽然客单价不低，但规模和粘性都弱一截，损耗还偏高。',
+    rows: [
+      { metric_name: 'GMV', category_a: '316 万元', category_b: '153 万元', delta: '+163 万元', winner: '蔬菜' },
+      { metric_name: '客单价', category_a: '869 元', category_b: '768 元', delta: '+101 元', winner: '蔬菜' },
+      { metric_name: '复购率', category_a: '69.4%', category_b: '65.8%', delta: '+3.6pp', winner: '蔬菜' },
+      { metric_name: '损耗率', category_a: '2.2%', category_b: '2.7%', delta: '-0.5pp', winner: '蔬菜（损耗更低）' },
+    ], confidence: 'high', engine: 'llm', path: 'sql', evidence: ['《2026-W35 销售周报》品类维度拆解', '事实表 2026-W35 蔬菜 / 水产指标'],
+    sql: 'SELECT f_a.metric_name,\n       f_a.metric_value || \' \' || f_a.metric_unit AS category_a,\n       f_b.metric_value || \' \' || f_b.metric_unit AS category_b,\n       f_a.metric_value - f_b.metric_value || \' \' || f_a.metric_unit AS delta\nFROM facts f_a\nJOIN facts f_b ON f_a.metric_name = f_b.metric_name AND f_a.week_label = f_b.week_label\nWHERE f_a.week_label = ?\n  AND f_a.category = ?\n  AND f_b.category = ?\n  AND f_a.metric_name IN (?, ?, ?, ?)\nORDER BY f_a.metric_value DESC;',
+    follow_ups: ['蔬菜 GMV 趋势是怎样的', '水产损耗率能降吗', '调料类和米类比呢'],
+    token_usage: { prompt_tokens: 1288, completion_tokens: 192, calls: 1, models: ['THUDM/GLM-4-9B-0414'] },
+    render_spec: { columns: [
+      { key: 'metric_name', role: 'subject', label: '指标' },
+      { key: 'category_a', role: 'measure', label: '蔬菜' },
+      { key: 'category_b', role: 'measure', label: '水产' },
+      { key: 'delta', role: 'derived', label: '差值' },
+      { key: 'winner', role: 'derived', label: '优势方' },
+    ] },
+    understanding: { executor: 'compiler', plan: { operation: 'compare_pair' }, args: { category_a: '蔬菜', category_b: '水产', metrics: ['GMV', '客单价', '复购率', '损耗率'], week: '2026-W35' },
+      slots: [
+        { key: 'category_a', label: '品类 A', kind: 'category', values: ['蔬菜'], options: ['蔬菜', '肉类', '水产', '调料类', '米类', '油类', '蛋类'] },
+        { key: 'category_b', label: '品类 B', kind: 'category', values: ['水产'], options: ['蔬菜', '肉类', '水产', '调料类', '米类', '油类', '蛋类'] },
+        { key: 'metric', label: '对比指标', kind: 'metric', values: ['GMV'], options: ['GMV', '毛利率', '净利率', '客单价', '损耗率', '复购率'] },
+        { key: 'week', label: '周次', kind: 'week', values: ['2026-W35'], options: ['2026-W35', '2026-W34', '2026-W33', '2026-W32', '2026-W31', '2026-W30'] },
+      ], editable: true },
+    intent: 'COMPARISON',
+    terms: { categories: ['蔬菜', '水产'], merchants: [], metrics: ['GMV', '客单价', '复购率', '损耗率'] },
+  },
 ]
 
 /** 「生成的 SQL」必须和结果表是同一组列，否则演示自相矛盾：
