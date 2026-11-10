@@ -1,0 +1,24 @@
+{
+  "name": "bce-offline-demo",
+  "private": true,
+  "version": "1.1.0",
+  "description": "BCE 1.1 离线演示站：单页应用 + 内嵌 mock 数据，不连后端、不调模型，可独立部署到任意静态托管",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5175",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5176"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
